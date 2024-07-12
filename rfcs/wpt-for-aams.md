@@ -1,32 +1,31 @@
 # WPT testing for AAMs
 
-This document explores the possibility of writing WPT tests for the AAM specifications.
+## Summary
 
-## Overview
+This proposals extends `testdriver.js` with the ability to test browser exposed accessibility APIs. This extension will allow us to test several W3C specifications that have no cross-browser test suites and will therefore greatly improve the web for individuals who use assistive technologies like screen readers.
 
-The Accessiblity API Mapping (AAM) specifications ([Core-AAM](https://www.w3.org/TR/core-aam-1.2/), [HTML-AAM](https://www.w3.org/TR/html-aam-1.0/), [SVG-AAM](https://www.w3.org/TR/svg-aam-1.0/), potentially [MathML-AAM](https://w3c.github.io/mathml-aam/), [CSS-AAM](https://w3c.github.io/css-aam/)) describe how user agents should expose semantics of web content languages to accessibility APIs.
+## Details
 
-These documents, taken together, describe how the browser should build an accessibility tree for each web page, and how the tree should be mapped to various accessibility platform APIs.
+The Accessibility API Mapping (AAM) specifications ([Core-AAM](https://www.w3.org/TR/core-aam-1.2/), [HTML-AAM](https://www.w3.org/TR/html-aam-1.0/), [SVG-AAM](https://www.w3.org/TR/svg-aam-1.0/), potentially [MathML-AAM](https://w3c.github.io/mathml-aam/), [CSS-AAM](https://w3c.github.io/css-aam/)) describe how user agents should expose semantics of web content languages to accessibility APIs.
 
-As of today, we don't have an automated way to test these specifications, the way we do for other web specifications.
-We'd like to explore what we would need to implement in order to be able to write fully automated tests for platform accessiblity API mappings.
+These documents, taken together, describe how the browser should build an accessibility tree for each web page, and how the tree should be mapped to various accessibility platform APIs. The goal of this extension is to add tests for these specifications to WPT.
 
 <details>
-<summary><h2>Background: Accessibility tree, Accessibility APIs, AAMs</h2></summary>
+<summary><h3>Background: Computed Accessibility Tree, Platform Accessibility APIs and the AAMs</h3></summary>
 
-### The Accessibility Tree and Accessibility APIs
+#### The Accessibility Tree and Accessibility APIs
 ![Diagram showing the interaction between a browser and accessibility APIs. See text below for more detail.](assets/accessibility_apis.png)
 
 <details id="accessibility_apis_diagram">
 <summary>Full image description</summary>
 A block diagram.
 
-At the top level it shows an assistive technology application, such as a screen reader using speech or braille, communicating via Plaform Accessibility APIs with a Browser application.
+At the top level it shows an assistive technology application, such as a screen reader using speech or braille, communicating via Platform Accessibility APIs with a Browser application.
 
 Within the Browser application, it shows that the Assistive Technology is communicating via a Platform API mapping which is an adapter for the computed accessibility tree data structure.
 In turn, the computed accessibility tree is built based on other data structures: the DOM tree and the layout/box tree; the layout/box tree is based on the DOM tree and CSS.
 
-The computed accessibility tree falls in the centre of the diagram, as it's the source of truth for the platform API mappings which are queried by assistive technology, and also the result of a complex process of transformation based on several other data structures.
+The computed accessibility tree falls in the center of the diagram, as it's the source of truth for the platform API mappings which are queried by assistive technology, and also the result of a complex process of transformation based on several other data structures.
 
 At the bottom of the diagram is a legend explaining how to read the different types of arrows and boxes used in the diagram.
 </details>
@@ -43,12 +42,12 @@ Each platform's accessibility APIs provide methods to query the tree structure, 
 They also typically provide ways to interact with the UI, such as sending a "click" action to the currently visited UI element, or selecting a particular option from a picker.
 Also, they provide ways for the UI to provide real-time updates or alerts in case of UI changing in a way that should be brought to the user's attention.
 
-### The computed accessibility tree
+#### The computed accessibility tree
 
 Since browser engines are typically platform-independent, typically they will compute a generic accessibility tree which can be adapted to any platform's accessibility APIs.
 The platform APIs are typically supported using an adapter which maps the platform API on to data from the computed accessibility tree.
 
-### AAM specifications
+#### AAM specifications
 
 The AAM specifications provide mappings between web technologies such as ARIA and HTML, and platform accessibility APIs.
 
@@ -143,7 +142,8 @@ And here is the mapping from HTML-AAM for a [`<button>`](https://www.w3.org/TR/h
 
 </details>
 
-## Prior art: Get Computed Label, Get Computed Role, potential WebDriver extensions
+<details>
+<summary><h3>Prior art: Get Computed Label, Get Computed Role, potential WebDriver extensions</h3></summary>
 
 ![Diagram showing how WebDriver supports getting the Computed Label and Computed Role for an element. Full description below.](assets/webdriver_accessibility_testing.png)
 
@@ -174,7 +174,7 @@ Computing the platform-independent role is supported in the AAMs, particularly i
 
 Name computation, meanwhile, is complex and important enough to get a whole spec to itself: [Accessible Name and Description Computation](https://www.w3.org/TR/accname-1.2/) - as well as [detailed steps for certain HTML elements](https://www.w3.org/TR/html-aam-1.0/#accname-computation).
 
-### Potential WebDriver extensions for accessibility
+#### Potential WebDriver extensions for accessibility
 
 There is [a proposal](https://github.com/WICG/aom/issues/203) to add an extension to WebDriver
 to allow accessing a full "computed accessibility node" for an element.
@@ -182,7 +182,9 @@ to allow accessing a full "computed accessibility node" for an element.
 This would allow fetching a much more extensive set of computed accessibility properties for an element via WebDriver.
 Like Computed Label and Computed Role, these would be querying the platform-independent, computed accessibility tree.
 
-## Proposal: testing AAMs via platform accessibility APIs directly
+</details>
+
+### Proposal: testing AAMs via platform accessibility APIs directly
 
 ![Diagram showing the proposed addition: querying the browser from WPT via the platform accessibility APIs. Full description below.](assets/platform_accessibility_api_testing.png)
 
@@ -192,7 +194,7 @@ A block diagram.
 
 This diagram extends the <a href="#user-content-webdriver_accessibility_diagram">diagram in the "Prior art" section</a>.
 
-It adds a dotted line arrow from the WPT application to the Plaform API mapping adapter within the Browser application, indicating the addition proposed here to use the Platform Accessibility APIs directly to test the browser's support for those APIs.
+It adds a dotted line arrow from the WPT application to the Platform API mapping adapter within the Browser application, indicating the addition proposed here to use the Platform Accessibility APIs directly to test the browser's support for those APIs.
 
 Notably, while the existing mechanism for WPT to query the browser via WebDriver
 communicates with the WebDriver API implementation within the browser via HTTP,
@@ -200,15 +202,14 @@ the proposed addition bypasses WebDriver to query the Platform API Mapping direc
 This matches the way that Assistive Technology communicates with the browser application.
 </details>
 
-We think testing the computed accessibility tree is extremely useful in itself,
+As described in the "Prior Art" section above, we think testing the computed accessibility tree is extremely useful in itself,
 and a good fit for the platform-independent nature of browser testing and WebDriver specifically.
 It provides a good foundation for ensuring that
 the first stage of accessibility API mapping for web features has been implemented,
 since in almost every case browsers will need to implement the cross-platform tree
 as a prerequisite for implementing the platform-specific APIs.
 
-We think it would be equally good to be able to directly test that each browser's platform API support conforms to the AAM specifications. The easiest and most reliable way to test that is to use the APIs directly,
-matching the way that assistive technology communicates with the browser.
+This proposal focuses on an equally important goal, directly testing that each browser's platform API support conforms to the AAM specifications. The easiest and most reliable way to test that is to use the APIs directly, matching the way that assistive technology communicates with the browser.
 
 An alternative would be to extend WebDriver to mirror each platform API's vocabulary.
 This would involve a great deal of work to specify how those vocabularies should be expressed
@@ -217,9 +218,7 @@ and implementation work to implement those APIs and test the implementation,
 before we could even write any tests using the WebDriver version.
 
 <details>
-<summary>
-<h3>
-Example: computed accessiblity tree vs. platform API mapping for <code>&lt;input type="password"&gt;</code>
+<summary><h3>Example: computed accessibility tree vs. platform API mapping for <code>&lt;input type="password"&gt;</code>
 </h3>
 </summary>
 
@@ -284,7 +283,7 @@ to be able to use the browser.
 
 We have an [experimental patch](https://github.com/Igalia/wpt/pull/2/files)
 which implements a proof-of-concept for using platform APIs
-(currently AT-SPI on Linux, and the Mac OS X ACcessibility Protocol)
+(currently AT-SPI on Linux, and the Mac OS X Accessibility Protocol)
 to query browsers under test and make assertions about their accessibility implementations.
 
 This patch works by:
@@ -346,17 +345,13 @@ Some extra implementation details:
   to the [Chrome](https://github.com/Igalia/wpt/pull/2/files#diff-0bfb8dd5978f182d6fc8ba9e085c743dd6ae9d76fcbd1aa326e9b0aa9bf3a829R522)
   command line
 
-## Open questions
+<details>
+<summary><h3>Open questions on technical implementations and test design</h3>
+</summary>
 
-### Extending `testdriver.js`/`testdriver-extra.js`
+The patch include all relevant technologies and the basic steps necessary to test the platform-specific accessibility APIs. However, there are some open design questions which we would love feedback on.
 
-Does it make sense to include this functionality directly in `testdriver.js`?
-
-Should it be split out into a separate file?
-
-Should we make an RFC anyway?
-
-### `GetAccessibilityAPINodeAction`/`PlatformAccessibilityProtocolPart` design
+#### `GetAccessibilityAPINodeAction`/`PlatformAccessibilityProtocolPart` design
 
 `executorplatformaccessibility.py` both defines and implements `PlatformAccessibilityProtocolPart`.
 This allows it to instantiate the appropriate platform-specific platform accessibility executor implementation.
@@ -412,11 +407,11 @@ class CallbackHandler:
 
 Does it make sense to piggy-back off the other `Protocol` implementations in this way?
 
-### Using the `testharness` test type rather than some new thing
+#### Using the `testharness` test type rather than some new thing
 
 We definitely want to be able to _use_ `testdriver.js` and `testharness{,report}.js` in our tests,
 since we want to be able to use WebDriver's automation functionality to interact with the page,
-and we don't want to invent a new form of testing fron scratch.
+and we don't want to invent a new form of testing from scratch.
 
 However, we're wondering whether it might make sense to define a new test type
 for these tests which are interacting with the browser locally via the platform accessibility APIs,
@@ -425,7 +420,7 @@ rather than via WebDriver.
 - What would be involved in defining a new test type which can still use that existing infrastructure?
 - Would that make it simpler to, for example, define new types of `CallbackHandler` and `Action` rather than piggy-backing on the existing `Protocol` implementations?
 
-### Per-platform tests
+#### Per-platform tests
 
 Is there an existing way to write platform-specific tests?
 
@@ -443,7 +438,7 @@ We're very much still figuring out how the eventual tests might be structured,
 but if there's already a way to run specific tests based on the platform,
 that would be good to know.
 
-### [Getting the browser PID](https://github.com/w3c/webdriver/issues/1823)
+#### [Getting the browser PID](https://github.com/w3c/webdriver/issues/1823)
 
 In order to query the browser application via accessibility APIs,
 we need a reliable way to find the correct browser application.
@@ -461,3 +456,11 @@ we can't always get the process ID of the browser easily from WPT.
 Valerie has filed [an issue](https://github.com/w3c/webdriver/issues/1823)
 on WebDriver to propose adding a mechanism to request the browser PID,
 potentially through the `capabilities` object used when creating a Session.
+
+</details>
+
+## Risks
+
+The primary risk is that these test might be somewhat slow to to run, primarily because the browser is much slower when accessibility features are turn on (when the browser builds the accessibility tree).
+
+Additionally, these tests introduce platform specific tests and results, which increase the complexity of WPT.
